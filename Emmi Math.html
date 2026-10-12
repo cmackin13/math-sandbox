@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Sandbox</title>
+    <style>
+        :root {
+            --bg-main: #121212;
+            --bg-card: #18181b;
+            --bg-input: #27272a;
+            --bg-active-tab: #1e3a8a;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent-blue: #3b82f6;
+            --border-color: #3f3f46;
+            --success: #22c55e;
+            --error: #f97316;
+            --gold: #fbbf24;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header Area */
+        .header-panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-titles h1 { font-size: 20px; margin: 0 0 4px 0; color: var(--accent-blue); }
+        .header-titles p { font-size: 13px; margin: 0; color: var(--text-muted); }
+        .header-stats { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+        .badge {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+        .badge span { color: var(--text-main); }
+        .badge.streak span { color: var(--gold); }
+
+        .btn-header {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+        .btn-header:hover { background-color: var(--bg-input); }
+        
+        .btn-music { border-color: #a855f7; color: #a855f7; }
+        .btn-music:hover { background-color: rgba(168, 85, 247, 0.1); }
+        .btn-music.playing { background-color: #a855f7; color: white; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h2 { margin: 0; font-size: 18px; }
+        .close-modal { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 6px; color: var(--text-muted); }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        /* Goal Banner */
+        #goalBanner {
+            display: none;
+            background-color: var(--success);
+            color: #000;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            animation: popIn 0.3s ease-out;
+        }
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* Main App Styles */
+        .panel { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+        .section-label { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .segmented-control { display: flex; background-color: #09090b; border: 1px solid var(--border-color); border-radius: 24px; overflow: hidden; margin-bottom: 24px; }
+        .segment-btn { flex: 1; padding: 12px; background: none; border: none; color: var(--text-muted); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .segment-btn.active { background-color: var(--bg-active-tab); color: var(--accent-blue); border-radius: 24px; }
+        
+        .family-list { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+        .family-btn { width: 40px; height: 40px; border-radius: 50%; background: none; border: 1px solid var(--border-color); color: var(--text-main); font-size: 14px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s;}
+        .family-btn.active { background-color: var(--bg-active-tab); border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* Toggles */
+        .toggles-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .toggle-group { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg-input); border: 1px solid var(--border-color); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background-color: var(--text-muted); transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--bg-active-tab); border-color: var(--accent-blue); }
+        input:checked + .slider:before { transform: translateX(20px); background-color: var(--accent-blue); }
+
+        /* Game Area */
+        .equation-area { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 16px; margin: 40px 0; }
+        .equation-text { font-size: 56px; font-weight: 600; font-family: monospace; }
+        .answer-box { width: 100px; height: 70px; background-color: var(--bg-input); border: 2px solid var(--accent-blue); border-radius: 12px; color: white; font-size: 40px; text-align: center; outline: none; font-family: monospace; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .btn-submit { width: 100%; max-width: 400px; margin: 0 auto; display: block; background-color: var(--accent-blue); color: white; border: none; padding: 16px; font-size: 16px; font-weight: bold; border-radius: 30px; cursor: pointer; transition: background 0.2s; }
+        .btn-submit:hover { background-color: #2563eb; }
+        
+        #feedback { text-align: center; margin-top: 20px; font-size: 18px; font-weight: bold; min-height: 24px; }
+        .feedback-correct { color: var(--success); }
+        .feedback-error { color: var(--error); }
+
+        /* Visual Dots */
+        .divider { border-top: 1px dashed var(--border-color); margin: 40px 0 24px 0; }
+        .visual-model-label { text-align: center; font-size: 12px; font-weight: bold; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 20px; text-transform: uppercase; }
+        .dots-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; }
+        .dot-group { background-color: #0f0f11; border: 1px solid #27272a; border-radius: 8px; padding: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-content: start; }
+        .dot { width: 8px; height: 8px; background-color: #7dd3fc; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Audio Player -->
+    <audio id="bgMusic" loop>
+        <source src="lofi.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <div class="header-panel">
+            <div class="header-titles">
+                <h1>Math Sandbox</h1>
+                <p>Master math families at your own pace</p>
+            </div>
+            <div class="header-stats">
+                <div class="badge">Solved: <span id="uiSolved">0</span></div>
+                <div class="badge streak">Streak: <span id="uiStreak">0</span></div>
+                <div class="badge streak">Best: <span id="uiBest">0</span></div>
+                <button class="btn-header btn-music" id="btnToggleMusic" onclick="toggleMusic()">🎵 Music: Off</button>
+                <button class="btn-header" onclick="toggleModal(true)">⚙️ Settings</button>
+            </div>
+        </div>
+
+        <div id="goalBanner">🎯 Goal Reached!</div>
+
+        <!-- Controls -->
+        <div class="panel">
+            <div class="section-label">Operation</div>
+            <div class="segmented-control" id="operationTabs">
+                <button class="segment-btn active" onclick="setOperation('multiply')">Multiplication (×)</button>
+                <button class="segment-btn" onclick="setOperation('divide')">Division (÷)</button>
+                <button class="segment-btn" onclick="setOperation('mixed')">Mixed (× & ÷)</button>
+            </div>
+            
+            <div class="section-label">
+                <span>Number Family</span>
+                <span id="currentFamilyLabel" style="color: white; font-weight: bold;">4s</span>
+            </div>
+            <div class="family-list" id="familyList"></div>
+
+            <div class="toggles-row">
+                <label class="toggle-group">
+                    <div class="switch">
+                        <input type="checkbox" id="toggleDots" checked onchange="generateProblem()">
+                        <span class="slider"></span>
+                    </div>
+                    Show visual dots helper
+                </label>
+                
+                <label class="toggle-group">
+                    <div class="switch">
+                        <input type="checkbox" id="toggleBlank" onchange="generateProblem()">
+                        <span class="slider"></span>
+                    </div>
+                    Vary missing blank position
+                </label>
+            </div>
+        </div>
+
+        <!-- Game -->
+        <div class="panel">
+            <div class="equation-area" id="equationArea"></div>
+            <button class="btn-submit" onclick="checkAnswer()" id="submitBtn">Check Answer</button>
+            <div id="feedback"></div>
+
+            <!-- Visual Model Area -->
+            <div id="visualModelSection">
+                <div class="divider"></div>
+                <div class="visual-model-label" id="visualLabel">VISUAL MODEL: 4 GROUPS OF 10</div>
+                <div class="dots-container" id="dotsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>App Settings & Goals</h2>
+                <button class="close-modal" onclick="toggleModal(false)">&times;</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Grade Level (Adjusts Max Number)</label>
+                <select id="settingGrade">
+                    <option value="10">3rd Grade (Up to 10x10)</option>
+                    <option value="12" selected>4th Grade (Up to 12x12)</option>
+                    <option value="15">5th Grade (Up to 15x15)</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Total Solved Goal</label>
+                    <input type="number" id="settingSessionSolved" value="30">
+                </div>
+                <div class="form-group">
+                    <label>Longest Streak Goal</label>
+                    <input type="number" id="settingSessionStreak" value="15">
+                </div>
+                <div class="form-group">
+                    <label>Break Goal (Solved)</label>
+                    <input type="number" id="settingBreakSolved" value="10">
+                </div>
+                <div class="form-group">
+                    <label>Break Goal (Streak)</label>
+                    <input type="number" id="settingBreakStreak" value="5">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Session Time Goal (Minutes)</label>
+                <input type="number" id="settingTimeGoal" value="15">
+            </div>
+
+            <button class="btn-submit" onclick="saveSettings()" style="margin-top: 10px;">Save Settings</button>
+        </div>
+    </div>
+
+    <script>
+        // State & Tracking
+        let currentOperation = 'multiply';
+        let currentFamily = 4; // 'all' or integer
+        let correctAnswer = 0;
+        let num1 = 0;
+        let num2 = 0;
+        let maxMultiplier = 12; 
+        
+        let stats = {
+            solvedTotal: 0,
+            solvedSinceBreak: 0,
+            currentStreak: 0,
+            streakSinceBreak: 0,
+            bestStreak: 0,
+            totalActiveTimeMs: 0,
+            lastActiveTimestamp: Date.now(),
+            isPaused: false,
+            timeGoalReached: false
+        };
+
+        let goals = {
+            timeMins: 15,
+            sessionSolved: 30,
+            breakSolved: 10,
+            sessionStreak: 15,
+            breakStreak: 5
+        };
+
+        // Music Player Logic
+        let isMusicPlaying = false;
+        function toggleMusic() {
+            const music = document.getElementById('bgMusic');
+            const btn = document.getElementById('btnToggleMusic');
+            
+            // Set volume to a gentle 30%
+            music.volume = 0.3;
+
+            if (isMusicPlaying) {
+                music.pause();
+                btn.innerText = "🎵 Music: Off";
+                btn.classList.remove('playing');
+            } else {
+                music.play().catch(error => {
+                    console.error("Audio playback failed.", error);
+                    alert("Audio couldn't play. Make sure you saved a file named 'lofi.mp3' in the same folder as this HTML file.");
+                });
+                btn.innerText = "🔊 Music: On";
+                btn.classList.add('playing');
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        // UI Initialization
+        function init() {
+            buildFamilyList();
+            generateProblem();
+            setInterval(checkTimeGoal, 60000); 
+        }
+
+        function toggleModal(show) { document.getElementById('settingsModal').style.display = show ? 'flex' : 'none'; }
+
+        function saveSettings() {
+            maxMultiplier = parseInt(document.getElementById('settingGrade').value);
+            goals.timeMins = parseInt(document.getElementById('settingTimeGoal').value);
+            goals.sessionSolved = parseInt(document.getElementById('settingSessionSolved').value);
+            goals.breakSolved = parseInt(document.getElementById('settingBreakSolved').value);
+            goals.sessionStreak = parseInt(document.getElementById('settingSessionStreak').value);
+            goals.breakStreak = parseInt(document.getElementById('settingBreakStreak').value);
+            
+            if (currentFamily !== 'all' && currentFamily > maxMultiplier) currentFamily = maxMultiplier;
+            buildFamilyList();
+            toggleModal(false);
+            generateProblem();
+        }
+
+        function buildFamilyList() {
+            const familyList = document.getElementById('familyList');
+            familyList.innerHTML = ''; 
+            
+            for (let i = 1; i <= maxMultiplier; i++) {
+                const btn = document.createElement('button');
+                btn.className = `family-btn ${i === currentFamily ? 'active' : ''}`;
+                btn.innerText = `${i}s`;
+                btn.onclick = () => setFamily(i, btn);
+                familyList.appendChild(btn);
+            }
+
+            const allBtn = document.createElement('button');
+            allBtn.className = `family-btn ${currentFamily === 'all' ? 'active' : ''}`;
+            allBtn.style.width = 'auto';
+            allBtn.style.padding = '0 16px';
+            allBtn.style.borderRadius = '20px';
+            allBtn.innerText = `All`;
+            allBtn.onclick = () => setFamily('all', allBtn);
+            familyList.appendChild(allBtn);
+
+            document.getElementById('currentFamilyLabel').innerText = currentFamily === 'all' ? 'All' : `${currentFamily}s`;
+        }
+
+        function setOperation(op) {
+            currentOperation = op;
+            const tabs = document.getElementById('operationTabs').children;
+            tabs[0].className = `segment-btn ${op === 'multiply' ? 'active' : ''}`;
+            tabs[1].className = `segment-btn ${op === 'divide' ? 'active' : ''}`;
+            tabs[2].className = `segment-btn ${op === 'mixed' ? 'active' : ''}`;
+            generateProblem();
+        }
+
+        function setFamily(family, btnElement) {
+            currentFamily = family;
+            document.getElementById('currentFamilyLabel').innerText = family === 'all' ? 'All' : `${family}s`;
+            const buttons = document.getElementById('familyList').children;
+            for (let btn of buttons) btn.classList.remove('active');
+            btnElement.classList.add('active');
+            generateProblem();
+        }
+
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        function generateProblem() {
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('submitBtn').innerText = 'Check Answer';
+            document.getElementById('submitBtn').onclick = checkAnswer;
+
+            let opToUse = currentOperation === 'mixed' ? (Math.random() > 0.5 ? 'multiply' : 'divide') : currentOperation;
+            const varyBlank = document.getElementById('toggleBlank').checked;
+            
+            num1 = (currentFamily === 'all') ? getRandomInt(1, maxMultiplier) : currentFamily;
+            num2 = getRandomInt(1, maxMultiplier);
+            let product = num1 * num2;
+            
+            const eqArea = document.getElementById('equationArea');
+            eqArea.innerHTML = '';
+
+            if (opToUse === 'multiply') {
+                correctAnswer = product;
+                if (varyBlank) {
+                    const pos = getRandomInt(1, 3);
+                    if (pos === 1) {
+                        correctAnswer = num1;
+                        eqArea.innerHTML = `<input type="number" class="answer-box" id="answerInput"> <span class="equation-text"> × ${num2} = ${product}</span>`;
+                    } else if (pos === 2) {
+                        correctAnswer = num2;
+                        eqArea.innerHTML = `<span class="equation-text">${num1} × </span> <input type="number" class="answer-box" id="answerInput"> <span class="equation-text"> = ${product}</span>`;
+                    } else {
+                        eqArea.innerHTML = `<span class="equation-text">${num1} × ${num2} = </span> <input type="number" class="answer-box" id="answerInput">`;
+                    }
+                } else {
+                    eqArea.innerHTML = `<span class="equation-text">${num1} × ${num2} = </span> <input type="number" class="answer-box" id="answerInput">`;
+                }
+                renderDots(num1, num2, 'multiply');
+            } else {
+                correctAnswer = num2;
+                if (varyBlank) {
+                    const pos = getRandomInt(1, 3);
+                    if (pos === 1) {
+                        correctAnswer = product;
+                        eqArea.innerHTML = `<input type="number" class="answer-box" id="answerInput"> <span class="equation-text"> ÷ ${num1} = ${num2}</span>`;
+                    } else if (pos === 2) {
+                        correctAnswer = num1;
+                        eqArea.innerHTML = `<span class="equation-text">${product} ÷ </span> <input type="number" class="answer-box" id="answerInput"> <span class="equation-text"> = ${num2}</span>`;
+                    } else {
+                        eqArea.innerHTML = `<span class="equation-text">${product} ÷ ${num1} = </span> <input type="number" class="answer-box" id="answerInput">`;
+                    }
+                } else {
+                    eqArea.innerHTML = `<span class="equation-text">${product} ÷ ${num1} = </span> <input type="number" class="answer-box" id="answerInput">`;
+                }
+                renderDots(product, num1, 'divide');
+            }
+
+            const inputEl = document.getElementById('answerInput');
+            if(inputEl) {
+                inputEl.focus();
+                inputEl.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('submitBtn').innerText === 'Next Problem' ? generateProblem() : checkAnswer();
+                    }
+                });
+            }
+        }
+
+        function renderDots(val1, val2, op) {
+            const showDots = document.getElementById('toggleDots').checked;
+            const section = document.getElementById('visualModelSection');
+            const container = document.getElementById('dotsContainer');
+            const label = document.getElementById('visualLabel');
+            
+            if (!showDots) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            container.innerHTML = ''; 
+
+            if (op === 'multiply') {
+                label.innerText = `VISUAL MODEL: ${val1} GROUPS OF ${val2}`;
+                for (let i = 0; i < val1; i++) {
+                    const group = document.createElement('div');
+                    group.className = 'dot-group';
+                    for (let j = 0; j < val2; j++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        group.appendChild(dot);
+                    }
+                    container.appendChild(group);
+                }
+            } else {
+                label.innerText = `VISUAL MODEL: ${val1} DIVIDED INTO GROUPS OF ${val2}`;
+                const groups = val1 / val2;
+                for (let i = 0; i < groups; i++) {
+                    const group = document.createElement('div');
+                    group.className = 'dot-group';
+                    for (let j = 0; j < val2; j++) {
+                        const dot = document.createElement('div');
+                        dot.className = 'dot';
+                        group.appendChild(dot);
+                    }
+                    container.appendChild(group);
+                }
+            }
+        }
+
+        function checkAnswer() {
+            const inputEl = document.getElementById('answerInput');
+            if(!inputEl) return;
+            
+            const userAnswer = parseInt(inputEl.value, 10);
+            const feedbackEl = document.getElementById('feedback');
+            const btn = document.getElementById('submitBtn');
+
+            if (isNaN(userAnswer)) {
+                feedbackEl.innerText = "Please enter a number.";
+                feedbackEl.className = "feedback-error";
+                return;
+            }
+
+            if (userAnswer === correctAnswer) {
+                feedbackEl.innerText = "Great job! 🔥";
+                feedbackEl.className = "feedback-correct";
+                
+                stats.solvedTotal++;
+                stats.solvedSinceBreak++;
+                stats.currentStreak++;
+                stats.streakSinceBreak++;
+                if(stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak;
+
+                updateUI();
+                checkGoals();
+
+                btn.innerText = "Next Problem";
+                btn.onclick = generateProblem;
+                inputEl.disabled = true;
+                btn.focus();
+            } else {
+                feedbackEl.innerText = "Not quite, try again! Keep it up.";
+                feedbackEl.className = "feedback-error";
+                stats.currentStreak = 0; 
+                stats.streakSinceBreak = 0; 
+                updateUI();
+                inputEl.value = '';
+                inputEl.focus();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('uiSolved').innerText = stats.solvedTotal;
+            document.getElementById('uiStreak').innerText = stats.currentStreak;
+            document.getElementById('uiBest').innerText = stats.bestStreak;
+        }
+
+        function triggerGoalAlert(message) {
+            const banner = document.getElementById('goalBanner');
+            banner.innerText = message;
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 5000);
+        }
+
+        function checkGoals() {
+            if(stats.solvedTotal === goals.sessionSolved) {
+                triggerGoalAlert(`🎉 Session Goal: ${goals.sessionSolved} solved! Amazing job!`);
+            } else if(stats.currentStreak === goals.sessionStreak) {
+                triggerGoalAlert(`🔥 Unstoppable! You hit your session streak goal of ${goals.sessionStreak}!`);
+            }
+
+            let breakTriggered = false;
+            if(stats.streakSinceBreak === goals.breakStreak) {
+                triggerGoalAlert(`🎯 You hit a streak of ${goals.breakStreak}! Take a 2-minute stretch break!`);
+                breakTriggered = true;
+            } else if(stats.solvedSinceBreak === goals.breakSolved) {
+                triggerGoalAlert(`🛑 You've solved ${goals.breakSolved}! Stand up and shake it out for a minute!`);
+                breakTriggered = true;
+            }
+
+            if (breakTriggered) {
+                stats.solvedSinceBreak = 0;
+                stats.streakSinceBreak = 0;
+            }
+        }
+
+        // Timer Logic
+        function updateActiveTime() {
+            if (!stats.isPaused) {
+                const now = Date.now();
+                stats.totalActiveTimeMs += (now - stats.lastActiveTimestamp);
+                stats.lastActiveTimestamp = now;
+            }
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                updateActiveTime();
+                stats.isPaused = true;
+            } else {
+                stats.lastActiveTimestamp = Date.now();
+                stats.isPaused = false;
+            }
+        });
+
+        function checkTimeGoal() {
+            updateActiveTime();
+            let elapsedMins = Math.floor(stats.totalActiveTimeMs / 60000);
+            if (elapsedMins >= goals.timeMins && !stats.timeGoalReached) {
+                triggerGoalAlert(`⏰ You've been practicing for ${goals.timeMins} minutes! Time to wrap up this session!`);
+                stats.timeGoalReached = true;
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
